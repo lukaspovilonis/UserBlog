@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+>
+<h:head>
+    <title>User Blog LP</title>
+</h:head>
+<h:body>
+
+    <h1>Rest api</h1>
+
+        <div id="login">
+            <table style="with: 50%">
+
+                <tr>
+                    <td>UserName</td>
+                    <td><input type="text" id="username" /></td>
+                </tr>
+                <tr>
+                    <td>Password</td>
+                    <td><input type="password" id="password" /></td>
+                </tr>
+            </table>
+            <button type="submit" onclick="registration();">Registration</button>
+            <button type="submit" onclick="login();">Login</button>
+        </div>
+        <div id="userBlog">
+            <h:inputHidden id="userToken"></h:inputHidden>
+            <table id="userBlogTable">
+                <th>title</th>
+                <th>text</th>
+                <th>update</th>
+                <th>remove</th>
+            </table>
+
+            <h2>add blog element</h2>
+            <table>
+                <tr>
+                    <td>Title</td>
+                    <td><input type="text" id="inputBlogTitle"/></td>
+                    <td>Text</td>
+                    <td><input type="text" id="inputBlogText"/></td>
+                </tr>
+            </table>
+            <button type="submit" onclick="saveBlog();">Save</button>
+        </div>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script type="text/javascript">
+
+            $('#userBlog').hide();
+
+            function registration() {
+                let d = document;
+                let username = d.getElementById("username").value;
+                let password = d.getElementById("password").value;
+                let URL = "http://localhost:8080/userblog/api/user/registration";
+                let data = {
+                    username: username,
+                    password: password
+                };
+                $.ajax({
+                    url: URL,
+                    type: "POST",
+                    data: JSON.stringify(data),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (data){
+                        success(data.info)
+                    },
+                })
+            }
+
+            function login() {
+                let d = document;
+                let username = d.getElementById("username").value;
+                let password = d.getElementById("password").value;
+                let URL = "http://localhost:8080/userblog/api/user/login";
+                let data = {
+                    username: username,
+                    password: password
+                };
+                $.ajax({
+                    url: URL,
+                    type: "POST",
+                    data: JSON.stringify(data),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (data){
+                        success(data.info)
+                    },
+                })
+            }
+
+            function saveBlog(){
+                let URL = "http://localhost:8080/userblog/api/blogs/saveBlog/" + $('#userToken').val();
+                let title = $('#inputBlogTitle').val();
+                let text = $('#inputBlogText').val();
+                let data = {
+                    title: title,
+                    text: text
+                };
+                $.ajax({
+                    url: URL,
+                    type: "POST",
+                    data: JSON.stringify(data),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (data){
+                        let tr = document.createElement('tr')
+                        tr.setAttribute('id', data.id);
+                        let td = document.createElement('td');
+                        td.setAttribute('class', 'blogTitle');
+                        let input = document.createElement('input');
+                        input.value =  data.title;
+                        td.appendChild(input);
+                        tr.appendChild(td);
+                        td = document.createElement('td');
+                        td.setAttribute('class', 'blogText');
+                        input = document.createElement('input');
+                        input.value =  data.text;
+                        td.appendChild(input);
+                        tr.appendChild(td);
+                        td = document.createElement('td');
+                        let button = document.createElement('button')
+                        button.textContent = 'update';
+                        button.setAttribute('onclick', 'update('+data.id +');');
+                        td.appendChild(button);
+                        tr.appendChild(td);
+                        td = document.createElement('td');
+                        button = document.createElement('button')
+                        button.setAttribute('onclick', 'remove('+data.id +');');
+                        button.textContent = 'remove';
+                        td.appendChild(button);
+                        tr.appendChild(td);
+                        $('#userBlogTable').append(tr);
+
+                    },
+                })
+            }
+            function getAllUserBlogs(){
+                let URL = "http://localhost:8080/userblog/api/blogs/userBlogs/" + $('#userToken').val();
+                $.ajax({
+                    url: URL,
+                    type: "GET",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (data){
+                        printAllUserBLogs(data);
+                    },
+                });
+            }
+            function remove(blogId){
+                let URL = "http://localhost:8080/userblog/api/blogs/deleteBlog/"+blogId+"/"+$('#userToken').val();
+                $.ajax({
+                    url: URL,
+                    type: "DELETE",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (data){
+                        document.getElementById(blogId).remove();
+                    },
+                })
+            };
+            function update(blogId){
+                let URL = "http://localhost:8080/userblog/api/blogs/updateBlog/" + $('#userToken').val();
+                let title = $('#'+blogId+'>.blogTitle>input').val();
+                let text = $('#'+blogId+'>.blogText>input').val();
+                let data = {
+                    id: blogId,
+                    title: title,
+                    text: text
+                }
+                    $.ajax({
+                        url: URL,
+                        type: "PUT",
+                        data: JSON.stringify(data),
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        success: function (data){
+                            console.log(data)
+                        },
+                    })
+                }
+            function printAllUserBLogs(data){
+                data.forEach(blog => {
+                    let tr = document.createElement('tr')
+                    tr.setAttribute('id', blog.id);
+                    let td = document.createElement('td');
+                    td.setAttribute('class', 'blogTitle');
+                    let input = document.createElement('input');
+                    input.value =  blog.title;
+                    td.appendChild(input);
+                    tr.appendChild(td);
+                    td = document.createElement('td');
+                    td.setAttribute('class', 'blogText');
+                    input = document.createElement('input');
+                    input.value =  blog.text;
+                    td.appendChild(input);
+                    tr.appendChild(td);
+                    td = document.createElement('td');
+                    let button = document.createElement('button')
+                    button.textContent = 'update';
+                    button.setAttribute('onclick', 'update('+blog.id +');');
+                    td.appendChild(button);
+                    tr.appendChild(td);
+                    td = document.createElement('td');
+                    button = document.createElement('button')
+                    button.setAttribute('onclick', 'remove('+blog.id +');');
+                    button.textContent = 'remove';
+                    td.appendChild(button);
+                    tr.appendChild(td);
+                    $('#userBlogTable').append(tr);
+                })
+
+            }
+            function success(data){
+                $('#login').hide()
+                $('#userToken').val(data);
+                getAllUserBlogs()
+                $('#userBlog').show();
+            }
+        </script>
+</h:body>
+</html>
